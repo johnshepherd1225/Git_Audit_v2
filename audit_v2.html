@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnapCount Lighting Audit</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f4f0;color:#222;min-height:100vh}
+/* HEADER */
+.app-header{position:sticky;top:0;z-index:100;background:#1a4731;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.app-header h1{font-size:1.25rem;font-weight:700;letter-spacing:.5px}
+.header-actions{display:flex;gap:10px}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;border:none;min-height:44px;transition:all .15s}
+.btn-primary{background:#4caf50;color:#fff}
+.btn-primary:hover{background:#43a047}
+.btn-outline{background:#fff;color:#4caf50;border:2px solid #4caf50}
+.btn-outline:hover{background:#e8f5e9}
+.btn-danger{background:#e53935;color:#fff}
+.btn-danger:hover{background:#c62828}
+.btn-ghost{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.6)}
+.btn-ghost:hover{background:rgba(255,255,255,.1)}
+.btn-sm{padding:6px 12px;font-size:.8rem;min-height:36px}
+.btn-xs{padding:4px 8px;font-size:.75rem;min-height:30px}
+/* LAYOUT */
+.main-content{max-width:1200px;margin:0 auto;padding:16px}
+/* CARDS */
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.1);margin-bottom:16px;overflow:hidden}
+.card-header{display:flex;align-items:center;gap:10px;padding:14px 18px;background:#f8fdf8;border-bottom:1px solid #e0ede0;cursor:pointer;user-select:none}
+.card-header:hover{background:#f0f9f0}
+.card-title{font-size:1rem;font-weight:700;flex:1}
+.card-body{padding:18px}
+.collapse-icon{font-size:1.1rem;transition:transform .2s;color:#4caf50}
+.collapsed .collapse-icon{transform:rotate(-90deg)}
+/* GRID */
+.form-grid{display:grid;gap:14px}
+.grid-2{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+.full-width{grid-column:1/-1}
+/* FORM FIELDS */
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:.8rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.4px}
+.form-control{padding:10px 12px;border:1.5px solid #ccc;border-radius:8px;font-size:.95rem;min-height:44px;transition:border-color .15s;background:#fff}
+.form-control:focus{outline:none;border-color:#4caf50;box-shadow:0 0 0 3px rgba(76,175,80,.15)}
+textarea.form-control{min-height:80px;resize:vertical}
+/* BUTTON GROUPS */
+.btn-group-label{font-size:.8rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.btn-group{display:flex;flex-wrap:wrap;gap:6px}
+.btn-group .bg-btn{min-height:44px;min-width:60px;padding:8px 14px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;border:2px solid #4caf50;background:#fff;color:#4caf50;transition:all .15s;white-space:nowrap}
+.btn-group .bg-btn:hover{background:#e8f5e9}
+.btn-group .bg-btn.selected{background:#4caf50;color:#fff}
+/* SECTIONS */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-size:1.1rem;font-weight:700;color:#1a4731}
+/* AREA CARD */
+.area-card{border:2px solid #c8e6c9;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.area-header{background:#e8f5e9;padding:12px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.area-title{font-size:1rem;font-weight:700;flex:1;color:#1a4731;cursor:pointer}
+.area-body{padding:16px}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;text-transform:uppercase}
+.badge-interior{background:#bbdefb;color:#1565c0}
+.badge-exterior{background:#fff9c4;color:#f57f17}
+/* ROOM CARD */
+.room-card{border:1px solid #ddd;border-radius:10px;margin-bottom:12px;overflow:hidden}
+.room-header{background:#fafafa;padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.room-header:hover{background:#f0f0f0}
+.room-title{font-size:.95rem;font-weight:700;flex:1}
+.room-body{padding:14px}
+/* FIXTURE ROW */
+.fixture-list{margin-top:12px}
+.fixture-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f9f9f9;border-radius:8px;margin-bottom:6px;flex-wrap:wrap}
+.fixture-id{font-size:.8rem;font-weight:700;color:#888;min-width:40px}
+.fixture-code{font-size:.85rem;font-weight:600;flex:1;color:#1a4731;font-family:monospace}
+.fixture-qty{font-size:.85rem;color:#555}
+.fixture-action{font-size:.8rem;color:#777}
+/* FIXTURE FORM */
+.fixture-form-panel{background:#f0f9f0;border:1px solid #c8e6c9;border-radius:10px;padding:16px;margin-top:10px}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.active{display:flex}
+.modal-box{background:#fff;border-radius:14px;max-height:90vh;display:flex;flex-direction:column;width:100%;max-width:700px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal-box.modal-lg{max-width:900px}
+.modal-box.modal-full{max-width:100%;max-height:100vh;border-radius:0;height:100vh}
+.modal-header{padding:16px 20px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:10px}
+.modal-title{font-size:1.1rem;font-weight:700;flex:1}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.modal-footer{padding:14px 20px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end}
+/* WIZARD */
+.wizard-modal{background:#fff;display:flex;flex-direction:column;height:100vh;width:100vw;max-width:100%;border-radius:0}
+.wizard-breadcrumb{display:flex;gap:4px;padding:10px 16px;background:#1a4731;overflow-x:auto;flex-shrink:0}
+.wizard-crumb{display:flex;flex-direction:column;align-items:center;min-width:70px;padding:4px 8px;border-radius:6px;cursor:default;opacity:.5;transition:all .15s;flex-shrink:0}
+.wizard-crumb.done{opacity:1;cursor:pointer;background:rgba(255,255,255,.15)}
+.wizard-crumb.done:hover{background:rgba(255,255,255,.25)}
+.wizard-crumb.active{opacity:1;background:rgba(76,175,80,.6)}
+.wizard-crumb-label{font-size:.65rem;color:#a5d6a7;text-transform:uppercase;letter-spacing:.3px}
+.wizard-crumb-value{font-size:.75rem;color:#fff;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wizard-content{flex:1;overflow-y:auto;padding:16px}
+.wizard-step-title{font-size:1.2rem;font-weight:700;color:#1a4731;margin-bottom:16px}
+.wizard-options{display:flex;flex-wrap:wrap;gap:8px}
+.wizard-option{min-height:52px;min-width:80px;padding:10px 16px;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;border:2px solid #4caf50;background:#fff;color:#4caf50;transition:all .15s;text-align:center}
+.wizard-option:hover{background:#e8f5e9}
+.wizard-option.selected{background:#4caf50;color:#fff}
+.wizard-custom-input{display:flex;gap:8px;align-items:center;margin-top:10px}
+.wizard-footer{padding:12px 16px;background:#f8fdf8;border-top:1px solid #e0ede0;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.wizard-code-preview{flex:1;font-family:monospace;font-size:.9rem;color:#1a4731;font-weight:700;background:#e8f5e9;padding:8px 12px;border-radius:8px;word-break:break-all}
+/* MASS UPDATE */
+.mass-update-tree{max-height:300px;overflow-y:auto;border:1px solid #ddd;border-radius:8px;padding:8px}
+.mu-area{margin-bottom:8px}
+.mu-room{margin-left:20px;margin-bottom:4px}
+.mu-fixture{margin-left:40px;font-size:.85rem;padding:2px 0}
+.mu-check-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+.mu-check-row label{cursor:pointer}
+/* DIVIDER */
+.divider{height:1px;background:#eee;margin:16px 0}
+/* UTIL */
+.flex{display:flex}.gap-8{gap:8px}.gap-12{gap:12px}.items-center{align-items:center}.justify-between{justify-content:space-between}.flex-wrap{flex-wrap:wrap}
+.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
+.text-sm{font-size:.85rem}.text-muted{color:#888}
+.inline-add-form{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.no-rooms-msg{text-align:center;color:#aaa;padding:20px;font-style:italic}
+@media(max-width:600px){
+  .app-header h1{font-size:1rem}
+  .btn{padding:8px 12px;font-size:.85rem}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <h1>&#9889; SnapCount Lighting Audit</h1>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="openMassUpdate()">&#9998; Mass Update</button>
+    <button class="btn btn-ghost" onclick="exportExcel()">&#8595; Export to Excel</button>
+  </div>
+</header>
+
+<div class="main-content">
+
+  <!-- FACILITY SETUP -->
+  <div class="card" id="facilityCard">
+    <div class="card-header" onclick="toggleCard('facilityCard')">
+      <span class="card-title">&#127970; Facility Setup</span>
+      <span class="collapse-icon">&#9660;</span>
+    </div>
+    <div class="card-body" id="facilityBody">
+      <div class="form-grid grid-2">
+        <div class="form-group"><label>Location Name *</label><input class="form-control" id="loc_name" placeholder="e.g. Acme Corp HQ" oninput="audit.location.name=this.value"></div>
+        <div class="form-group"><label>Address 1</label><input class="form-control" id="loc_addr1" oninput="audit.location.address1=this.value"></div>
+        <div class="form-group"><label>Address 2</label><input class="form-control" id="loc_addr2" oninput="audit.location.address2=this.value"></div>
+        <div class="form-group"><label>City</label><input class="form-control" id="loc_city" oninput="audit.location.city=this.value"></div>
+        <div class="form-group"><label>State</label><input class="form-control" id="loc_state" oninput="audit.location.state=this.value"></div>
+        <div class="form-group"><label>Zip</label><input class="form-control" id="loc_zip" oninput="audit.location.zip=this.value"></div>
+        <div class="form-group"><label>Country</label><input class="form-control" id="loc_country" oninput="audit.location.country=this.value" value="USA"></div>
+        <div class="form-group"><label>Facility Type</label>
+          <select class="form-control" id="loc_facType" onchange="audit.location.facilityType=this.value">
+            <option value="">Select...</option>
+            <option>Office</option><option>Warehouse</option><option>Retail</option><option>School</option>
+            <option>Hospital</option><option>Hotel</option><option>Manufacturing</option><option>Parking Garage</option>
+            <option>Municipal</option><option>Religious</option><option>Restaurant</option><option>Gym/Recreation</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Utility Company</label><input class="form-control" id="loc_utility" oninput="audit.location.utilityCompany=this.value"></div>
+        <div class="form-group"><label>$/kWh</label><input class="form-control" type="number" step="0.001" id="loc_kwh" oninput="audit.location.kwhCost=this.value" placeholder="0.12"></div>
+        <div class="form-group"><label>Demand $/kW</label><input class="form-control" type="number" step="0.01" id="loc_demand" oninput="audit.location.kwhDemandCost=this.value" placeholder="10.00"></div>
+        <div class="form-group"><label>Building SqFt</label><input class="form-control" type="number" id="loc_sqft" oninput="audit.location.buildingSqFt=this.value"></div>
+        <div class="form-group"><label>Avg Monthly Lighting Payment ($)</label><input class="form-control" type="number" id="loc_payment" oninput="audit.location.avgMonthlyPayment=this.value"></div>
+        <div class="form-group"><label>Avg Monthly Lighting kWh</label><input class="form-control" type="number" id="loc_mkwh" oninput="audit.location.avgMonthlyKwh=this.value"></div>
+        <div class="form-group full-width"><label>Facility Notes</label><textarea class="form-control" id="loc_notes" oninput="audit.location.facilityNotes=this.value" placeholder="Any notes about the facility..."></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AREAS -->
+  <div>
+    <div class="section-header">
+      <span class="section-title">&#127968; Areas</span>
+      <button class="btn btn-primary" onclick="showAddArea()">+ Add Area</button>
+    </div>
+    <div id="addAreaForm" style="display:none" class="card"><div class="card-body">
+      <div class="inline-add-form">
+        <input class="form-control" id="newAreaName" placeholder="Area name..." style="flex:1;min-width:180px">
+        <div class="btn-group" id="newAreaIE">
+          <button class="bg-btn" onclick="selectNewAreaIE('Interior',this)">Interior</button>
+          <button class="bg-btn" onclick="selectNewAreaIE('Exterior',this)">Exterior</button>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addArea()">Add</button>
+        <button class="btn btn-outline btn-sm" onclick="hideAddArea()">Cancel</button>
+      </div>
+    </div></div>
+    <div id="areasContainer"></div>
+  </div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- SET DEFAULTS MODAL -->
+<div class="modal-overlay" id="defaultsModal">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <span class="modal-title">Set Defaults for Area</span>
+      <button class="btn btn-outline btn-sm" onclick="closeDefaults()">&#10005;</button>
+    </div>
+    <div class="modal-body" id="defaultsBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeDefaults()">Cancel</button>
+      <button class="btn btn-primary" onclick="acceptDefaults()">Accept</button>
+    </div>
+  </div>
+</div>
+
+<!-- MASS UPDATE MODAL -->
+<div class="modal-overlay" id="massUpdateModal">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <span class="modal-title">&#9998; Mass Update Fixtures</span>
+      <button class="btn btn-outline btn-sm" onclick="closeMassUpdate()">&#10005;</button>
+    </div>
+    <div class="modal-body" id="massUpdateBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeMassUpdate()">Cancel</button>
+      <button class="btn btn-primary" onclick="applyMassUpdate()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIXTURE WIZARD MODAL -->
+<div class="modal-overlay" id="wizardModal" style="padding:0;align-items:stretch">
+  <div class="modal-box modal-full wizard-modal">
+    <div class="wizard-breadcrumb" id="wizardBreadcrumb"></div>
+    <div class="wizard-content" id="wizardContent"></div>
+    <div class="wizard-footer">
+      <button class="btn btn-outline btn-sm" id="wizardBackBtn" onclick="wizardBack()" style="display:none">&#8592; Back</button>
+      <div class="wizard-code-preview" id="wizardCodePreview">-</div>
+      <button class="btn btn-outline btn-sm" onclick="closeWizard()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ROOM NAME MODAL -->
+<div class="modal-overlay" id="addRoomModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header"><span class="modal-title">Add New Room</span></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Room Name *</label><input class="form-control" id="newRoomName" placeholder="e.g. Office 101"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeAddRoom()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAddRoom()">Add Room</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =============================================
+//  GLOBAL STATE
+// =============================================
+const audit = {
+  location: {name:'',address1:'',address2:'',city:'',state:'',zip:'',country:'USA',facilityType:'',utilityCompany:'',kwhCost:'',kwhDemandCost:'',buildingSqFt:'',avgMonthlyPayment:'',avgMonthlyKwh:'',facilityNotes:''},
+  areas:[]
+};
+let areaIdCounter=1;
+let roomIdCounter=1;
+let fixtureIdCounter=1;
+let newAreaIESelected='Interior';
+
+// Pending callbacks
+let _currentAreaIdForRoom=null;
+let _defaultsAreaId=null;
+let _tempDefaults={};
+let _wizardCallback=null;
+let _wizardState={};
+let _massUpdateContext={};
+
+// =============================================
+//  WIZARD DATA
+// =============================================
+const TECH_OPTIONS=[
+  {label:'Circline Fluorescent',code:'CIRC'},
+  {label:'Compact Fluorescent',code:'CFL'},
+  {label:'Exit Sign',code:'ES'},
+  {label:'Halogen Incandescent',code:'HAL'},
+  {label:'High Pressure Sodium',code:'HPS'},
+  {label:'LED',code:'LED'},
+  {label:'Linear Fluorescent',code:'F'},
+  {label:'Linear LED',code:'LLED'},
+  {label:'Mercury Vapor',code:'MV'},
+  {label:'Metal Halide',code:'MH'},
+  {label:'QL Induction',code:'QL'},
+  {label:'Quartz',code:'Q'},
+  {label:'Standard Incandescent',code:'INCAN'},
+  {label:'U-Tube Fluorescent',code:'UFL'},
+  {label:'No Existing',code:'NE'},
+  {label:'TBD',code:'TBD'},
+  {label:'Ceiling Fan',code:'CF'}
+];
+
+const LAMP_CODES={
+  LED:['L2.5','L3','L4','L5','L8','L9','L12','L16','L20','L25','L40','L50','L55','L60','L70','L86','L90','L100','L135','L186','L201','L220','L235','L280'],
+  LLED:['L08T8LED','L11T8LED','L14T8LED','L15T8LED','L20T8LED','L22T8LED','L25T8LED'],
+  F:['F14T5','F15T12','F15T8','F17T8','F20T12','F24T12/HO','F24T5','F24T5/HO','F25T12','F25T8','F28T5','F28T8','F30T12','F30T12/ES','F30T8','F32T8','F32T8/25','F34T12','F36T12/HO','F36T5','F36T5/HO','F40T10','F40T12','F40T12/ES','F40T8','F48T12','F48T12/ES','F48T12/HO','F48T12/HO/ES','F48T12/VHO','F48T12/VHO/ES','F48T5','F48T5/HO','F54T5HO','F60T12','F60T12/HO','F60T12/VHO','F60T5','F60T5/HO','F72T12','F72T12/HO','F72T12/VHO','F72T8','F96T12','F96T12/ES','F96T12/HO','F96T12/HO/ES','F96T12/VHO','F96T12/VHO/ES','F96T8','F96T8/HO'],
+  ES:['CFT5W','CFT7W','CFT9W','F8T5','I5','I7.5','I10','I15','I20','I25','I34','I40','I50','LED0.5W','LED1.5W','LED2W','LED3W','LED5W','LED8W','LED10.5W'],
+  MH:['MH32','MH35','MH50','MH70','MH100','MH150','MH175','MH200','MH250','MH300','MH320','MH350','MH360','MH400','MH450','MH750','MH1000','MH1500','MH1800','MHPS100','MHPS150','MHPS175','MHPS200','MHPS250','MHPS300','MHPS320','MHPS350','MHPS400','MHPS450','MHPS750','MHPS1000'],
+  HPS:['HPS35','HPS50','HPS70','HPS100','HPS150','HPS200','HPS225','HPS250','HPS310','HPS360','HPS400','HPS600','HPS750','HPS1000'],
+  MV:['MV40','MV50','MV75','MV100','MV175','MV250','MV400','MV700','MV1000'],
+  CFL:['CF5W','CFT5W','CF7W','CFS7W','CFT7W','CF9W','CFT9W','CFQ9W','CFS9W','CFD10W','CFQ10W','CF11W','CFS11W','CF13W','CFQ13W','CFT13W','CF15W','CFQ15W','CFS15W','CFD16W','CFQ17W','CF18W','CFQ18W','CFT18W','CFD21W','CF20W','CFS20W','CFQ20W','CFQ22W','CFT22W','CF23W','CFS23W','CFT24W','CFQ25W','CFQ26W','CF24W','CF26W','CFS27W','CFD28W','CFT28W','CFQ28W','CF30W','CF32W','CFM32W','CF34W','CF36W','CFT36W','CFD38W','CF40W','CFT40W','CF42W','CFT50W','CF55W','CFT55W','CF80W'],
+  QL:['QL40','QL55','QL85','QL100','QL165','QL200','QL250','QL300','QL500'],
+  HAL:['H20/LV','H25/LV','H35','H35/LV','H40','H42','H42/LV','H45','H50','H50/LV','H52','H55','H60','H65/LV','H72','H75','H75/LV','H90','H100','H150','H200','H250','H300','H350','H400','H425','H500','H750','H900','H1000','H1200','H1500','MR16-35','MR16-50'],
+  Q:['Q100','Q150','Q200','Q250','Q300','Q500','Q600','Q750','Q1000'],
+  CIRC:['FC6T9','FC8T9','FC12T9','FC16T9','FC22/32T9','FC32/40T9','FC44T9'],
+  INCAN:['I7.5','I15','I20','I25','I34','I36','I40','I40/ES','I40/ES/LL','I42','I45','I50','I52','I54','I55','I60','I60/ES','I60/ES/LL','I65','I67','I69','I72','I75','I75/ES','I75/ES/LL','I80','I85','I90','I93','I95','I100','I100/ES','I100/ES/LL','I120','I125','I135','I150','I150/ES','I150/ES/LL','I170','I200','I200/LL','I250','I300','I400','I448','I500','I750','I1000','I1500','I2000'],
+  UFL:['FU28T8/3','FU31T8/3','FU31T8/6','FU40T12','FU40T12/ES'],
+  CF:['With Lamps'],
+  NE:['No Existing'],
+  TBD:['10w','20w']
+};
+const LAMP_CODES_CUSTOM={LED:true, HAL:true};
+
+const LPF_OPTIONS={
+  LED:[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],
+  LLED:[1,2,3,4,5,6,7,8,9,10,12,14],
+  F:[1,2,3,4,5,6,7,8,9,10,12,14],
+  ES:[1,2,3,4,5],
+  MH:[1,2,3,4],
+  HPS:[1,2,3,4],
+  MV:[1,2,3,4],
+  CFL:[1,2,3,4,5,6,7,8,9,10,11,12,13,14,18,19,20,22],
+  QL:[1,2,3,4],
+  HAL:[...Array.from({length:20},(_,i)=>i+1)],
+  Q:[1,2,3,4,5,6,7,8,9,10],
+  CIRC:[1,2,3,4],
+  INCAN:[...Array.from({length:20},(_,i)=>i+1)],
+  UFL:[1,2,3,4,5,6],
+  CF:[0,1,2,3,4,5],
+  NE:[0],
+  TBD:[1]
+};
+
+const FIXTURE_TYPES={
+  LED:['Troffer','Highbay','4-in Can','6-in Can','8-in Can','Flood','Wallpack','Cobra Head','Pole Head','Post Top','Track Head','Decorative','Coach','Acorn','Box','Jelly Jar','Spider Chandelier','Step Light','Security'],
+  LLED:['Highbay','Strip','Troffer'],
+  F:['Box','Direct','Direct/Indirect','Flood','Highbay','Indirect','Industrial Strip','Pendant','Plenum Troffer','Reflector','Strip','Surface Troffer','Troffer','Vanity','Vapor Tight','Wrap'],
+  ES:['Emergency','Emergency w/BBU','Exit','Exit w/BBU','Exit Combo','Exit Combo w/BBU'],
+  MH:['4-in Can','6-in Can','8-in Can','10-in Can','12-in Can','Acorn','Bollard','Box','Coach','Cobra Head','Flood','Garage','Globe','Highbay','Lowbay','Plenum Troffer','Post Top','Security','Shoe Box','Spot','Troffer','Wallpack'],
+  HPS:['2X2','4-in Can','6-in Can','8-in Can','10-in Can','12-in Can','Acorn','Bollard','Box','Canopy','Coach','Cobra Head','Dusk to Dawn','Flood','Globe','Highbay','Lowbay','Parking Garage','Plenum Troffer','Post Top','Security','Shoe Box','Troffer','Wallpack'],
+  MV:['4-in Can','6-in Can','8-in Can','Acorn','Bollard','Box','Coach','Cobra Head','Decorative','Flood','Garage','Plenum Troffer','Post Top','Security','Shoe Box','Sport','Surface','Troffer','Wallpack'],
+  CFL:['4-in Can','6-in Can','8-in Can','10-in Can','Acorn','Chandelier','Decorative','Drum','Eyeball Can','Flood','High Bay','Jelly Jar','Round','Sconce','Security','Square','Step Light','Track','Troffer','Vanity','Wallpack'],
+  QL:['4-in Can','6-in Can','8-in Can','Acorn','Box','Coach','Cobra Head','Flood','Plenum Troffer','Security','Shoe Box','Troffer','Wallpack'],
+  HAL:['4-in Can','6-in Can','8-in Can','Chandelier','Decorative','Eyeball Can','Flood','Halogen T3 Flood','Motion Security','Sconce','Step Light','Track','Vanity'],
+  Q:['4-in Can','6-in Can','8-in Can','Decorative','Flood','Security','Wallpack'],
+  CIRC:['Chandelier','Decorative','Drum'],
+  INCAN:['4-in Can','6-in Can','8-in Can','10-in Can','Acorn','Chandelier','Decorative','Drum','Eyeball Can','Flood','Jelly Jar','Round','Security','Spider Chandelier','Spot','Square','Step Light','Track','Vanity','Wallpack'],
+  UFL:['2X2'],
+  CF:['12 inches','24 inches','36 inches','48 inches plus'],
+  NE:['No Existing'],
+  TBD:['Troffer','Highbay','4-in Can','6-in Can','8-in Can','Flood','Wallpack','Cobra Head','Pole Head','Post Top','Track Head','Decorative','Coach','Acorn','Box','Jelly Jar','Spider Chandelier','Step Light','Security']
+};
+
+const FIXTURE_TYPE_ADDL={
+  LED:['Candelabra','Medium','G4','G5','GU 5.3','GU 10','GU 24','Solid State','Plug-in 2 Pin - Vertical','Plug-in 2 Pin - Horizontal','Plug-in 4 Pin Vertical','Plug-in 4 Pin - Horizontal','Mogul','1X4','2X2','2X4'],
+  LLED:['1X2','1X3','1X4','1X5','1X6','1X7','1X8','2X2','2X4','4X4','8 foot'],
+  F:['1X2','1X3','1X4','1X5','1X6','1X7','1X8','2X2','2X4','2X8','4X4','2 foot','3 foot','4 foot','5 foot','6 foot','8 foot','12 foot'],
+  ES:['White','Almond','Black','Metallic','Edge Lit','Green Tritium','Red Tritium'],
+  MH:['Medium','Mogul'],
+  HPS:['Medium','Mogul'],
+  MV:['Medium','Mogul'],
+  CFL:['Plug-in 2 Pin - Vertical','Plug-in 2 Pin - Horizontal','Plug-in 4 Pin - Vertical','Plug-in 4 Pin - Horizontal','Biax 2G11 - Horizontal','Biax 2G11 - Vertical','BR40','PAR20','PAR36','PAR38','BR30','R14','R16','R20','R30','R40','MR16'],
+  QL:['2x2','2x4'],
+  HAL:['2 Pin','4 Pin','Candelabra','GU10','GU5F','G4','G5','GU 5.3','MR16','GU24','Medium','Mogul'],
+  Q:['Candelabra','Double End','GU','Medium','Mogul','Plug-in 2 Pin','Single End'],
+  CIRC:['Round','Square'],
+  INCAN:['A19','A21','BR30','BR40','MR16','PAR 20','PAR 30','PAR 38','PAR 46'],
+  UFL:['1x4','2x4','2x2','Box','Direct','Direct/Indirect','Indirect','Plenum Troffer','Troffer','Wrap'],
+  CF:['White','Black','Brown','Polished Nickel','Other'],
+  NE:['No Existing'],
+  TBD:['Lamp','Fixture']
+};
+
+const LENS_TYPES={
+  LED:['Clear','Open - no lens','Frosted','Prismatic'],
+  LLED:['Clear','Eggcrate','Frosted','Parabolic','Paracube','Prismatic','No Lens'],
+  F:['Center Basket','Clear','Diffused','Eggcrate','Louver','Metal Wireguard','Parabolic','Parabolic 6 Cell','Parabolic 9 Cell','Parabolic 12 Cell','Parabolic 18 Cell','Paracube','Prismatic','Tube Guard','White Reflector','Wire Cage','No Lens'],
+  ES:['Green','Red'],
+  MH:['Clear','Frosted','Glass','Prismatic','No Lens'],
+  HPS:['Clear','Open - no lens','Frosted','Prismatic'],
+  MV:['Clear','Frosted','Prismatic'],
+  CFL:['Clear','Eggcrate','Frosted','Parabolic','Paracube','Prismatic','No Lens'],
+  QL:['Clear','Frosted','Prismatic'],
+  HAL:['Clear','Frosted','Prismatic','PAR20','PAR30','PAR38','R30','R40','No Lens'],
+  Q:['Clear','Frosted'],
+  CIRC:['Clear','Frosted','Prismatic'],
+  INCAN:['Clear','Eggcrate','Frosted','Parabolic','Paracube','Prismatic','No Lens'],
+  UFL:['Clear','Eggcrate','Frosted','Parabolic','Paracube','Prismatic','No Lens'],
+  CF:null,// skipped
+  NE:['No Existing'],
+  TBD:['Clear','Open - no lens','Frosted','Prismatic','No Lens']
+};
+
+const MOUNTING_TYPES={
+  LED:['Recessed','Surface','Suspended','Pendant','Wall','Pole','Ground'],
+  LLED:['Recessed','Surface','Suspended','Pendant','Wall','Pole','Ground'],
+  F:['Aircraft Cable','Chain','Group','Pendant','Recessed','Surface','Suspended','Wall'],
+  ES:['Recessed','Surface','Wall','Suspended'],
+  MH:['Pole 6-in Arm','Pole 12-in Arm','Aircraft Cable','Chain','Gooseneck','Ground','Ground Knuckle','Ground Yoke','Knuckle','Pendant','Pole','Recessed','Surface','Suspended','Tenon','Trunnion','Wall','Yoke','Wall Bracket'],
+  HPS:['Aircraft Cable','Ground','Hook','Inground','Jack Chain','Knuckle','Pendant','Pole','Recessed','Slip Fitter','Spider Mount','Surface','Tenon','Trunnion','Wall','Wall Bracket','Yoke'],
+  MV:['6-in Arm','12-in Arm','Aircraft Cable','Ground','Knuckle','Pendant','Pole','Recessed','Surface','Suspended','Tenon','Wall','Wall Bracket','Yoke'],
+  CFL:['Arm','Gooseneck','Ground','Ground Knuckle','Ground Yoke','Pendant','Recessed','Surface','Suspended','Track','Wall'],
+  QL:['Aircraft Cable','Ground','Pendant','Pole','Recessed','Surface','Suspended','Wall'],
+  HAL:['Ground','Pendant','Pole','Recessed','Surface','Suspended','Track','Wall'],
+  Q:['Ground','Pendant','Pole','Recessed','Surface','Suspended','Track','Wall'],
+  CIRC:['Pendant','Recessed','Surface','Suspended','Track','Wall'],
+  INCAN:['Ground','Pendant','Pole','Recessed','Socket','Surface','Suspended','Track','Wall'],
+  UFL:['Recessed','Surface','Suspended'],
+  CF:['Surface','Pendant'],
+  NE:['No Existing'],
+  TBD:['Recessed','Surface','Suspended','Pendant','Wall','Pole','Ground']
+};
+
+const COLOR_TEMPS={
+  CIRC:['3500','4000','4100','5000'],
+  CF:null,// skipped
+  NE:null,
+  TBD:null
+};
+function getColorTemps(tech){
+  if(tech==='CF') return null;
+  if(tech==='NE') return null;
+  if(tech==='TBD') return null;
+  if(tech==='CIRC') return ['3500','4000','4100','5000'];
+  return ['3000','4000','4100','5000'];
+}
+
+const WIZARD_STEP_NAMES=['Tech','Lamp','L/F','Type','Type Addl','Lens','Mount','Temp','Emerg'];
+
+// Steps that are skipped for certain tech
+function getSkippedSteps(tech){
+  const skip=new Set();
+  if(tech==='NE'){skip.add(1);skip.add(2);skip.add(3);skip.add(4);skip.add(5);skip.add(6);skip.add(7);skip.add(8);}
+  if(tech==='CF'){skip.add(5);skip.add(7);skip.add(8);}// lens(5), temp(7), emerg(8) skipped → output *
+  if(tech==='TBD'){skip.add(7);skip.add(8);}// temp+emerg auto
+  if(tech==='UFL') skip.add(3);// type auto '2X2'
+  return skip;
+}
+
+// =============================================
+//  UTILITY
+// =============================================
+function uid(){return Date.now()+'-'+Math.random().toString(36).slice(2,8)}
+function toggleCard(id){
+  const card=document.getElementById(id);
+  const body=document.getElementById(id.replace('Card','Body'));
+  if(!body) return;
+  card.classList.toggle('collapsed');
+  if(card.classList.contains('collapsed')) body.style.display='none';
+  else body.style.display='';
+}
+function $id(id){return document.getElementById(id)}
+
+function extractWatts(lampCode){
+  if(!lampCode||['With Lamps','No Existing','TBD'].includes(lampCode)) return 0;
+  let m;
+  m=lampCode.match(/^LED(\d+\.?\d*)W$/i);if(m) return parseFloat(m[1]);
+  m=lampCode.match(/^L(\d+)T\d+LED$/i);if(m) return parseInt(m[1]);
+  m=lampCode.match(/^[A-Z]+(\d+\.?\d*)W$/i);if(m) return parseFloat(m[1]);
+  m=lampCode.match(/^FC(\d+)T/i);if(m) return parseInt(m[1]);
+  m=lampCode.match(/^FU(\d+)T/i);if(m) return parseInt(m[1]);
+  m=lampCode.match(/^F(\d+)T/i);if(m) return parseInt(m[1]);
+  m=lampCode.match(/^MHPS(\d+)/i);if(m) return parseInt(m[1]);
+  m=lampCode.match(/^(?:MH|HPS|MV|QL|Q)(\d+)/i);if(m) return parseInt(m[1]);
+  m=lampCode.match(/^H(\d+)/i);if(m) return parseInt(m[1]);
+  m=lampCode.match(/^I(\d+\.?\d*)/i);if(m) return parseFloat(m[1]);
+  m=lampCode.match(/^L(\d+\.?\d*)/i);if(m) return parseFloat(m[1]);
+  m=lampCode.match(/^(\d+\.?\d*)w$/i);if(m) return parseFloat(m[1]);
+  return 0;
+}
+
+function calcAvgFc(room){
+  const vals=[room.fc1,room.fc2,room.fc3,room.fc4,room.fc5].filter(v=>v!==''&&v!==null&&v!==undefined&&!isNaN(parseFloat(v)));
+  if(!vals.length) return '';
+  return (vals.reduce((a,b)=>a+parseFloat(b),0)/vals.length).toFixed(1);
+}
+
+// =============================================
+//  AREA MANAGEMENT
+// =============================================
+function showAddArea(){$id('addAreaForm').style.display='';$id('newAreaName').focus();}
+function hideAddArea(){$id('addAreaForm').style.display='none';$id('newAreaName').value='';newAreaIESelected='Interior';document.querySelectorAll('#newAreaIE .bg-btn').forEach(b=>b.classList.remove('selected'));}
+function selectNewAreaIE(val,btn){
+  newAreaIESelected=val;
+  document.querySelectorAll('#newAreaIE .bg-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+function addArea(){
+  const name=$id('newAreaName').value.trim();
+  if(!name){alert('Please enter an area name.');return;}
+  const area={
+    id:uid(),
+    name,
+    interiorExterior:newAreaIESelected||'Interior',
+    defaults:{
+      proposedAction:'',burnHourGroup:'',voltage:'',lampsPerFixture:'',specialEquipment:'',notes:'',controlNotes:'',switchQty:'',ceilingHeight:'',fixtureHeight:'',ceilingType:'',existingSensor:'',newSensor:'',newSensorQty:'',switching:'',difficultyFactor:'',interiorExterior:'',fc1:'',fc2:'',fc3:'',fc4:'',fc5:''
+    },
+    rooms:[],
+    collapsed:false
+  };
+  audit.areas.push(area);
+  hideAddArea();
+  renderAreas();
+}
+function deleteArea(areaId){
+  if(!confirm('Delete this area and all its rooms/fixtures?')) return;
+  audit.areas=audit.areas.filter(a=>a.id!==areaId);
+  renderAreas();
+}
+function toggleAreaCollapse(areaId){
+  const area=audit.areas.find(a=>a.id===areaId);
+  if(area) area.collapsed=!area.collapsed;
+  renderAreas();
+}
+function updateAreaName(areaId,val){
+  const area=audit.areas.find(a=>a.id===areaId);
+  if(area) area.name=val;
+}
+
+// =============================================
+//  ROOM MANAGEMENT
+// =============================================
+function showAddRoom(areaId){
+  _currentAreaIdForRoom=areaId;
+  $id('newRoomName').value='';
+  $id('addRoomModal').classList.add('active');
+  setTimeout(()=>$id('newRoomName').focus(),100);
+}
+function closeAddRoom(){$id('addRoomModal').classList.remove('active');_currentAreaIdForRoom=null;}
+function confirmAddRoom(){
+  const name=$id('newRoomName').value.trim();
+  if(!name){alert('Please enter a room name.');return;}
+  const area=audit.areas.find(a=>a.id===_currentAreaIdForRoom);
+  if(!area) return;
+  const d=area.defaults;
+  const room={
+    id:uid(),
+    name,
+    roomType:'',
+    length:'',width:'',sqft:'',roomNotes:'',
+    ceilingHeight:d.ceilingHeight||'',
+    ceilingType:d.ceilingType||'',
+    fc1:d.fc1||'',fc2:d.fc2||'',fc3:d.fc3||'',fc4:d.fc4||'',fc5:d.fc5||'',avgFc:'',
+    existingSensor:d.existingSensor||'',
+    newSensor:d.newSensor||'',
+    newSensorQty:d.newSensorQty||'',
+    controlNotes:d.controlNotes||'',
+    voltage:d.voltage||'',
+    switching:d.switching||'',
+    switchQty:d.switchQty||'',
+    interiorExterior:d.interiorExterior||area.interiorExterior||'Interior',
+    fixtures:[],
+    collapsed:false
+  };
+  room.avgFc=calcAvgFc(room);
+  area.rooms.push(room);
+  closeAddRoom();
+  renderAreas();
+}
+function deleteRoom(areaId,roomId){
+  if(!confirm('Delete this room and all its fixtures?')) return;
+  const area=audit.areas.find(a=>a.id===areaId);
+  if(area) area.rooms=area.rooms.filter(r=>r.id!==roomId);
+  renderAreas();
+}
+function toggleRoomCollapse(areaId,roomId){
+  const area=audit.areas.find(a=>a.id===areaId);
+  if(!area) return;
+  const room=area.rooms.find(r=>r.id===roomId);
+  if(room) room.collapsed=!room.collapsed;
+  renderAreas();
+}
+
+// =============================================
+//  FIXTURE MANAGEMENT
+// =============================================
+function addFixture(areaId,roomId){
+  const area=audit.areas.find(a=>a.id===areaId);
+  if(!area) return;
+  const room=area.rooms.find(r=>r.id===roomId);
+  if(!room) return;
+  const d=area.defaults;
+  const fixture={
+    id:fixtureIdCounter++,
+    fixtureCode:'',
+    fixtureEnergy:'',
+    fixtureAttributes:'',
+    fixtureHeight:d.fixtureHeight||'',
+    qty:1,
+    proposedAction:d.proposedAction||'',
+    burnHourGroup:d.burnHourGroup||'',
+    difficultyFactor:d.difficultyFactor||'Base',
+    lightingUse:'Area Lighting',
+    specialEquipment:d.specialEquipment||'',
+    notes:d.notes||'',
+    lampsPerFixture:d.lampsPerFixture||'',
+    lampTech:'',
+    lampCode:'',
+    editOpen:true
+  };
+  room.fixtures.push(fixture);
+  renderAreas();
+}
+function deleteFixture(areaId,roomId,fixId){
+  if(!confirm('Delete this fixture?')) return;
+  const area=audit.areas.find(a=>a.id===areaId);
+  if(!area) return;
+  const room=area.rooms.find(r=>r.id===roomId);
+  if(room) room.fixtures=room.fixtures.filter(f=>f.id!==fixId);
+  renderAreas();
+}
+function toggleFixtureEdit(areaId,roomId,fixId){
+  const fixture=getFixture(areaId,roomId,fixId);
+  if(fixture) fixture.editOpen=!fixture.editOpen;
+  renderAreas();
+}
+function getFixture(areaId,roomId,fixId){
+  const area=audit.areas.find(a=>a.id===areaId);
+  if(!area) return null;
+  const room=area.rooms.find(r=>r.id===roomId);
+  if(!room) return null;
+  return room.fixtures.find(f=>f.id===fixId);
+}
+function updateFixtureField(areaId,roomId,fixId,field,value){
+  const f=getFixture(areaId,roomId,fixId);
+  if(f) f[field]=value;
+}
+function updateRoomField(areaId,roomId,field,value){
+  const area=audit.areas.find(a=>a.id===areaId);
+  if(!area) return;
+  const room=area.rooms.find(r=>r.id===roomId);
+  if(!room) return;
+  room[field]=value;
+  if(['fc1','fc2','fc3','fc4','fc5'].includes(field)){
+    room.avgFc=calcAvgFc(room);
+    const el=$id('avgFc_'+roomId);
+    if(el) el.textContent='Avg FC: '+(room.avgFc||'—');
+  }
+  if(field==='length'||field==='width'){
+    const l=parseFloat(room.length)||0;
+    const w=parseFloat(room.width)||0;
+    room.sqft=l&&w?Math.round(l*w):'';
+    const el=$id('sqft_'+roomId);
+    if(el) el.textContent=room.sqft||'';
+  }
+}
+
+// =============================================
+//  RENDER ENGINE
+// =============================================
+function renderAreas(){
+  const container=$id('areasContainer');
+  if(!audit.areas.length){
+    container.innerHTML='<div class="no-rooms-msg">No areas yet. Click "+ Add Area" to get started.</div>';
+    return;
+  }
+  container.innerHTML=audit.areas.map(area=>renderArea(area)).join('');
+}
+
+function renderArea(area){
+  const ie=area.interiorExterior||'Interior';
+  const badgeClass=ie==='Interior'?'badge-interior':'badge-exterior';
+  const bodyStyle=area.collapsed?'display:none':'';
+  return `<div class="area-card" id="area_${area.id}">
+    <div class="area-header">
+      <span class="area-title" onclick="toggleAreaCollapse('${area.id}')">${escHtml(area.name)}</span>
+      <span class="badge ${badgeClass}">${ie}</span>
+      <input class="form-control" style="max-width:200px;margin-left:8px" value="${escHtml(area.name)}" onchange="updateAreaName('${area.id}',this.value);this.closest('.area-card').querySelector('.area-title').textContent=this.value" title="Rename area">
+      <button class="btn btn-outline btn-sm" onclick="openDefaults('${area.id}')">Set Defaults</button>
+      <button class="btn btn-primary btn-sm" onclick="showAddRoom('${area.id}')">+ Add Room</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteArea('${area.id}')">Delete Area</button>
+    </div>
+    <div class="area-body" style="${bodyStyle}">
+      ${area.rooms.length?area.rooms.map(room=>renderRoom(area.id,room)).join(''):'<div class="no-rooms-msg">No rooms yet. Click "+ Add Room" to add one.</div>'}
+    </div>
+  </div>`;
+}
+
+function renderRoom(areaId,room){
+  const bodyStyle=room.collapsed?'display:none':'';
+  const summaryType=room.roomType?` &mdash; ${escHtml(room.roomType)}`:'';
+  return `<div class="room-card" id="room_${room.id}">
+    <div class="room-header" onclick="toggleRoomCollapse('${areaId}','${room.id}')">
+      <span class="room-title">${escHtml(room.name)}${summaryType}</span>
+      <span id="sqft_${room.id}" style="font-size:.8rem;color:#888">${room.sqft||''}</span>
+      <span style="font-size:.8rem;color:#888">${room.fixtures.length} fixture(s)</span>
+      <span style="font-size:1rem;color:#4caf50;margin-left:4px">${room.collapsed?'&#9660;':'&#9650;'}</span>
+      <button class="btn btn-danger btn-xs" onclick="event.stopPropagation();deleteRoom('${areaId}','${room.id}')" style="margin-left:8px">Delete</button>
+    </div>
+    <div class="room-body" style="${bodyStyle}">
+      ${renderRoomFields(areaId,room)}
+      <div class="divider"></div>
+      <div class="section-header" style="margin-bottom:8px">
+        <span style="font-weight:700;color:#1a4731">Fixtures</span>
+        <button class="btn btn-primary btn-sm" onclick="addFixture('${areaId}','${room.id}')">+ Add Fixture</button>
+      </div>
+      <div class="fixture-list">
+        ${room.fixtures.map(f=>renderFixture(areaId,room.id,f)).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function bgBtn(value, selected, onclick){
+  const sel=selected?'selected':'';
+  return `<button class="bg-btn ${sel}" onclick="${onclick}">${escHtml(value)}</button>`;
+}
+
+function renderRoomFields(areaId,room){
+  const rid=room.id;
+  const ceilHopts=[10,12,15,18,20,25,30,35,40,60];
+  const ceilTopts=['Cathedral','Drop','Drywall','Hangar','Hard','Open Truss','Plaster','Spline','2x2 Lay-in','2x4 Lay-in'];
+  const sensorOpts=['None','Wall','Ceiling','Vacancy','Fixture'];
+  const voltOpts=['120','208','277','347','480','Unknown'];
+  const switchOpts=['Occupancy','Bi-Level','Dimming','Standard','2-Pole','3-Pole'];
+  const ieOpts=['Interior','Exterior'];
+  return `
+  <div class="form-grid grid-2">
+    <div class="form-group">
+      <label>Room Name</label>
+      <input class="form-control" value="${escHtml(room.name)}" onchange="updateRoomField('${areaId}','${rid}','name',this.value);this.closest('.room-card').querySelector('.room-title').innerHTML=escHtmlExternal(this.value)+(this.closest('.room-card').querySelector('[data-roomtype]')?this.closest('.room-card').querySelector('[data-roomtype]').value?(' &mdash; '+this.closest('.room-card').querySelector('[data-roomtype]').value):'':'')">
+    </div>
+    <div class="form-group">
+      <label>Room Type</label>
+      <select class="form-control" data-roomtype onchange="updateRoomField('${areaId}','${rid}','roomType',this.value);renderRoomTitle('${rid}')">
+        <option value="">Select...</option>
+        ${['Office','Restroom','Hallway','Stairwell','Storage','Mechanical','Conference','Break Room','Lobby','Warehouse','Parking','Exterior','Other'].map(t=>`<option ${room.roomType===t?'selected':''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Length (ft)</label>
+      <input class="form-control" type="number" value="${room.length||''}" oninput="updateRoomField('${areaId}','${rid}','length',this.value)">
+    </div>
+    <div class="form-group">
+      <label>Width (ft)</label>
+      <input class="form-control" type="number" value="${room.width||''}" oninput="updateRoomField('${areaId}','${rid}','width',this.value)">
+    </div>
+    <div class="form-group">
+      <label>Sq Ft (auto)</label>
+      <input class="form-control" readonly value="${room.sqft||''}" id="sqft2_${rid}" style="background:#f9f9f9">
+    </div>
+    <div class="form-group full-width">
+      <label>Room Notes</label>
+      <textarea class="form-control" oninput="updateRoomField('${areaId}','${rid}','roomNotes',this.value)">${escHtml(room.roomNotes||'')}</textarea>
+    </div>
+  </div>
+  <div class="mt-12">
+    <div class="btn-group-label">Ceiling Height</div>
+    <div class="btn-group">${ceilHopts.map(v=>bgBtn(v, String(room.ceilingHeight)===String(v), `selectRoomBtnGroup(event,'${areaId}','${rid}','ceilingHeight','${v}')`)).join('')}</div>
+  </div>
+  <div class="mt-12">
+    <div class="btn-group-label">Ceiling Type</div>
+    <div class="btn-group">${ceilTopts.map(v=>bgBtn(v, room.ceilingType===v, `selectRoomBtnGroup(event,'${areaId}','${rid}','ceilingType','${v.replace(/'/g,"\\'")}','${rid}')`)).join('')}</div>
+  </div>
+  <div class="form-grid grid-3 mt-12">
+    ${[1,2,3,4,5].map(i=>`<div class="form-group"><label>FC${i}</label><input class="form-control" type="number" step="0.1" value="${room['fc'+i]||''}" oninput="updateRoomField('${areaId}','${rid}','fc${i}',this.value)"></div>`).join('')}
+    <div class="form-group"><label>Avg Ft Candle</label><div id="avgFc_${rid}" style="padding:10px 12px;background:#f5f5f5;border-radius:8px;min-height:44px;display:flex;align-items:center;font-weight:700;color:#1a4731">Avg FC: ${room.avgFc||'—'}</div></div>
+  </div>
+  <div class="mt-12">
+    <div class="btn-group-label">Existing Sensor</div>
+    <div class="btn-group">${sensorOpts.map(v=>bgBtn(v, room.existingSensor===v, `selectRoomBtnGroup(event,'${areaId}','${rid}','existingSensor','${v}')`)).join('')}</div>
+  </div>
+  <div class="mt-12">
+    <div class="btn-group-label">New Sensor</div>
+    <div class="btn-group">${sensorOpts.map(v=>bgBtn(v, room.newSensor===v, `selectRoomBtnGroup(event,'${areaId}','${rid}','newSensor','${v}')`)).join('')}</div>
+  </div>
+  <div class="form-grid grid-2 mt-12">
+    <div class="form-group"><label>New Sensor Qty</label><input class="form-control" type="number" value="${room.newSensorQty||''}" oninput="updateRoomField('${areaId}','${rid}','newSensorQty',this.value)"></div>
+    <div class="form-group"><label>Control Notes</label><input class="form-control" value="${escHtml(room.controlNotes||'')}" oninput="updateRoomField('${areaId}','${rid}','controlNotes',this.value)"></div>
+  </div>
+  <div class="mt-12">
+    <div class="btn-group-label">Voltage</div>
+    <div class="btn-group">${voltOpts.map(v=>bgBtn(v, room.voltage===v, `selectRoomBtnGroup(event,'${areaId}','${rid}','voltage','${v}')`)).join('')}</div>
+  </div>
+  <div class="mt-12">
+    <div class="btn-group-label">Switching</div>
+    <div class="btn-group">${switchOpts.map(v=>bgBtn(v, room.switching===v, `selectRoomBtnGroup(event,'${areaId}','${rid}','switching','${v.replace(/'/g,"\\'")}','${rid}')`)).join('')}</div>
+  </div>
+  <div class="form-grid grid-2 mt-12">
+    <div class="form-group"><label>Switch Qty</label><input class="form-control" type="number" value="${room.switchQty||''}" oninput="updateRoomField('${areaId}','${rid}','switchQty',this.value)"></div>
+  </div>
+  <div class="mt-12">
+    <div class="btn-group-label">Interior / Exterior</div>
+    <div class="btn-group">${ieOpts.map(v=>bgBtn(v, room.interiorExterior===v, `selectRoomBtnGroup(event,'${areaId}','${rid}','interiorExterior','${v}')`)).join('')}</div>
+  </div>`;
+}
+
+function renderRoomTitle(roomId){
+  // update header title after room type changes
+  const card=$id('room_'+roomId);
+  if(!card) return;
+  const titleEl=card.querySelector('.room-title');
+  const nameInput=card.querySelector('[onchange*="name"]');
+  const typeSelect=card.querySelector('[data-roomtype]');
+  if(!titleEl) return;
+  const name=nameInput?nameInput.value:'';
+  const type=typeSelect?typeSelect.value:'';
+  titleEl.innerHTML=escHtml(name)+(type?` &mdash; ${escHtml(type)}`:'');
+}
+
+function selectRoomBtnGroup(event,areaId,roomId,field,value){
+  const btn=event.target;
+  const group=btn.closest('.btn-group');
+  // Toggle off if already selected
+  const wasSelected=btn.classList.contains('selected');
+  group.querySelectorAll('.bg-btn').forEach(b=>b.classList.remove('selected'));
+  if(!wasSelected){
+    btn.classList.add('selected');
+    updateRoomField(areaId,roomId,field,value);
+  } else {
+    updateRoomField(areaId,roomId,field,'');
+  }
+}
+
+function renderFixture(areaId,roomId,fx){
+  const actionOpts=['Retrofit','Replace','Install','Add Controls','Remove','Relamp','Delamp','Do Nothing','Exclude','Warranty Replacement'];
+  const burnOpts=['Warehouse','Office','24 Hours','Emergency'];
+  const diffOpts=['Base','Add 25%','Add 50%'];
+  const luOpts=['Area Lighting','Exterior Flood','Landscape Lighting','Task'];
+  const heightOpts=[4,6,8,10,12,15,18,20,25,30,35,40,55];
+
+  const compactRow=`<div class="fixture-row">
+    <span class="fixture-id">#${fx.id}</span>
+    <span class="fixture-code">${fx.fixtureCode||'(no fixture selected)'}</span>
+    <span class="fixture-qty">Qty: ${fx.qty}</span>
+    <span class="fixture-action">${fx.proposedAction||''}</span>
+    <button class="btn btn-outline btn-xs" onclick="toggleFixtureEdit('${areaId}','${roomId}',${fx.id})">&#9998; Edit</button>
+    <button class="btn btn-danger btn-xs" onclick="deleteFixture('${areaId}','${roomId}',${fx.id})">&#10005;</button>
+  </div>`;
+
+  if(!fx.editOpen) return compactRow;
+
+  return `${compactRow}
+  <div class="fixture-form-panel" id="fixPanel_${fx.id}">
+    <div class="form-grid grid-2">
+      <div class="form-group">
+        <label>Fixture Code</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="flex:1;padding:10px 12px;background:#e8f5e9;border-radius:8px;font-family:monospace;font-size:.85rem;min-height:44px;display:flex;align-items:center;word-break:break-all">${escHtml(fx.fixtureCode||'—')}</div>
+          <button class="btn btn-primary btn-sm" onclick="openWizard('${areaId}','${roomId}',${fx.id})">Select Fixture</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Qty</label>
+        <input class="form-control" type="number" min="1" value="${fx.qty}" oninput="updateFixtureField('${areaId}','${roomId}',${fx.id},'qty',parseInt(this.value)||1);updateFixtureSummary('${areaId}','${roomId}',${fx.id})">
+      </div>
+      <div class="form-group full-width">
+        <label>Fixture Height</label>
+        <div class="btn-group">${heightOpts.map(v=>bgBtn(v, String(fx.fixtureHeight)===String(v), `selectFixtureBtnGroup(event,'${areaId}','${roomId}',${fx.id},'fixtureHeight','${v}')`)).join('')}</div>
+      </div>
+      <div class="form-group">
+        <label>Proposed Action</label>
+        <select class="form-control" onchange="updateFixtureField('${areaId}','${roomId}',${fx.id},'proposedAction',this.value);updateFixtureSummary('${areaId}','${roomId}',${fx.id})">
+          <option value="">Select...</option>
+          ${actionOpts.map(a=>`<option ${fx.proposedAction===a?'selected':''}>${a}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Burn Hour Group</label>
+        <select class="form-control" onchange="updateFixtureField('${areaId}','${roomId}',${fx.id},'burnHourGroup',this.value)">
+          <option value="">Select...</option>
+          ${burnOpts.map(b=>`<option ${fx.burnHourGroup===b?'selected':''}>${b}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group full-width">
+        <label>Difficulty Factor</label>
+        <div class="btn-group">${diffOpts.map(v=>bgBtn(v, fx.difficultyFactor===v, `selectFixtureBtnGroup(event,'${areaId}','${roomId}',${fx.id},'difficultyFactor','${v.replace(/'/g,"\\'")}')`)).join('')}</div>
+      </div>
+      <div class="form-group full-width">
+        <label>Lighting Use</label>
+        <div class="btn-group">${luOpts.map(v=>bgBtn(v, fx.lightingUse===v, `selectFixtureBtnGroup(event,'${areaId}','${roomId}',${fx.id},'lightingUse','${v.replace(/'/g,"\\'")}')`)).join('')}</div>
+      </div>
+      <div class="form-group">
+        <label>Special Equipment</label>
+        <input class="form-control" value="${escHtml(fx.specialEquipment||'')}" oninput="updateFixtureField('${areaId}','${roomId}',${fx.id},'specialEquipment',this.value)">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input class="form-control" value="${escHtml(fx.notes||'')}" oninput="updateFixtureField('${areaId}','${roomId}',${fx.id},'notes',this.value)">
+      </div>
+    </div>
+    <div class="mt-12" style="display:flex;justify-content:flex-end">
+      <button class="btn btn-primary btn-sm" onclick="toggleFixtureEdit('${areaId}','${roomId}',${fx.id})">&#10003; Done</button>
+    </div>
+  </div>`;
+}
+
+function selectFixtureBtnGroup(event,areaId,roomId,fixId,field,value){
+  const btn=event.target;
+  const group=btn.closest('.btn-group');
+  const wasSelected=btn.classList.contains('selected');
+  group.querySelectorAll('.bg-btn').forEach(b=>b.classList.remove('selected'));
+  if(!wasSelected){
+    btn.classList.add('selected');
+    updateFixtureField(areaId,roomId,fixId,field,value);
+  } else {
+    updateFixtureField(areaId,roomId,fixId,field,'');
+  }
+}
+
+function updateFixtureSummary(areaId,roomId,fixId){
+  // lightweight update of just the compact row without full re-render
+  // Full re-render is simpler here
+}
+
+function escHtml(str){
+  if(str===null||str===undefined) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+// Expose for inline handlers
+window.escHtmlExternal=escHtml;
+
+// =============================================
+//  SET DEFAULTS MODAL
+// =============================================
+function openDefaults(areaId){
+  _defaultsAreaId=areaId;
+  const area=audit.areas.find(a=>a.id===areaId);
+  if(!area) return;
+  _tempDefaults=Object.assign({},area.defaults);
+  $id('defaultsBody').innerHTML=renderDefaultsForm(_tempDefaults);
+  $id('defaultsModal').classList.add('active');
+}
+function closeDefaults(){$id('defaultsModal').classList.remove('active');}
+function acceptDefaults(){
+  const area=audit.areas.find(a=>a.id===_defaultsAreaId);
+  if(area) area.defaults=Object.assign({},_tempDefaults);
+  closeDefaults();
+}
+
+function updateTempDefault(field,value){_tempDefaults[field]=value;}
+function selectTempDefaultBtnGroup(event,field,value){
+  const btn=event.target;
+  const group=btn.closest('.btn-group');
+  const wasSelected=btn.classList.contains('selected');
+  group.querySelectorAll('.bg-btn').forEach(b=>b.classList.remove('selected'));
+  if(!wasSelected){btn.classList.add('selected');_tempDefaults[field]=value;}
+  else{_tempDefaults[field]='';}
+}
+
+function renderDefaultsForm(d){
+  const actionOpts=['Retrofit','Replace','Install','Add Controls','Remove','Relamp','Delamp','Do Nothing','Exclude','Warranty Replacement'];
+  const burnOpts=['Warehouse','Office','24 Hours','Emergency'];
+  const voltOpts=['120','208','277','347','480','Unknown'];
+  const diffOpts=['Base','Add 25%','Add 50%'];
+  const ceilHopts=[10,12,15,18,20,25,30,35,40,60];
+  const ceilTopts=['Cathedral','Drop','Drywall','Hangar','Hard','Open Truss','Plaster','Spline','2x2 Lay-in','2x4 Lay-in'];
+  const sensorOpts=['None','Wall','Ceiling','Vacancy','Fixture'];
+  const switchOpts=['Occupancy','Bi-Level','Dimming','Standard','2-Pole','3-Pole'];
+  const ieOpts=['Interior','Exterior'];
+  const heightOpts=[4,6,8,10,12,15,18,20,25,30,35,40,55];
+
+  function dbtn(field,value){
+    const sel=d[field]===value?'selected':'';
+    return `<button class="bg-btn ${sel}" onclick="selectTempDefaultBtnGroup(event,'${field}','${value.replace(/'/g,"\\'")}')">${escHtml(value)}</button>`;
+  }
+
+  return `<div class="form-grid grid-2">
+    <div class="form-group">
+      <label>Proposed Action</label>
+      <select class="form-control" onchange="updateTempDefault('proposedAction',this.value)">
+        <option value="">None</option>
+        ${actionOpts.map(a=>`<option ${d.proposedAction===a?'selected':''}>${a}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Burn Hour Group</label>
+      <select class="form-control" onchange="updateTempDefault('burnHourGroup',this.value)">
+        <option value="">None</option>
+        ${burnOpts.map(b=>`<option ${d.burnHourGroup===b?'selected':''}>${b}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group full-width">
+      <div class="btn-group-label">Voltage</div>
+      <div class="btn-group">${voltOpts.map(v=>dbtn('voltage',v)).join('')}</div>
+    </div>
+    <div class="form-group">
+      <label>Lamps/Fixture</label>
+      <input class="form-control" type="number" value="${d.lampsPerFixture||''}" oninput="updateTempDefault('lampsPerFixture',this.value)">
+    </div>
+    <div class="form-group">
+      <label>Special Equipment</label>
+      <input class="form-control" value="${escHtml(d.specialEquipment||'')}" oninput="updateTempDefault('specialEquipment',this.value)">
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <input class="form-control" value="${escHtml(d.notes||'')}" oninput="updateTempDefault('notes',this.value)">
+    </div>
+    <div class="form-group">
+      <label>Control Notes</label>
+      <input class="form-control" value="${escHtml(d.controlNotes||'')}" oninput="updateTempDefault('controlNotes',this.value)">
+    </div>
+    <div class="form-group">
+      <label>Switch Qty</label>
+      <input class="form-control" type="number" value="${d.switchQty||''}" oninput="updateTempDefault('switchQty',this.value)">
+    </div>
+    <div class="form-group">
+      <label>New Sensor Qty</label>
+      <input class="form-control" type="number" value="${d.newSensorQty||''}" oninput="updateTempDefault('newSensorQty',this.value)">
+    </div>
+    <div class="form-group full-width">
+      <div class="btn-group-label">Ceiling Height</div>
+      <div class="btn-group">${ceilHopts.map(v=>dbtn('ceilingHeight',String(v))).join('')}</div>
+    </div>
+    <div class="form-group full-width">
+      <div class="btn-group-label">Fixture Height</div>
+      <div class="btn-group">${heightOpts.map(v=>dbtn('fixtureHeight',String(v))).join('')}</div>
+    </div>
+    <div class="form-group full-width">
+      <div class="btn-group-label">Ceiling Type</div>
+      <div class="btn-group">${ceilTopts.map(v=>dbtn('ceilingType',v)).join('')}</div>
+    </div>
+    <div class="form-group full-width">
+      <div class="btn-group-label">Existing Sensor</div>
+      <div class="btn-group">${sensorOpts.map(v=>dbtn('existingSensor',v)).join('')}</div>
+    </div>
+    <div class="form-group full-width">
+      <div class="btn-group-label">New Sensor</div>
+      <div class="btn-group">${sensorOpts.map(v=>dbtn('newSensor',v)).join('')}</div>
+    </div>
+    <div class="form-group full-width">
+      <div class="btn-group-label">Switching</div>
+      <div class="btn-group">${switchOpts.map(v=>dbtn('switching',v)).join('')}</div>
+    </div>
+    <div class="form-group full-width">
+      <div class="btn-group-label">Difficulty Factor</div>
+      <div class="btn-group">${diffOpts.map(v=>dbtn('difficultyFactor',v)).join('')}</div>
+    </div>
+    <div class="form-group full-width">
+      <div class="btn-group-label">Interior / Exterior</div>
+      <div class="btn-group">${ieOpts.map(v=>dbtn('interiorExterior',v)).join('')}</div>
+    </div>
+    <div class="form-group full-width">
+      <div class="btn-group-label">FC Values (defaults)</div>
+      <div class="form-grid grid-3">
+        ${[1,2,3,4,5].map(i=>`<div class="form-group"><label>FC${i}</label><input class="form-control" type="number" step="0.1" value="${d['fc'+i]||''}" oninput="updateTempDefault('fc${i}',this.value)"></div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// =============================================
+//  WIZARD
+// =============================================
+// _wizardState: {tech, lampCode, lpf, fixtureType, fixtureTypeAddl, lens, mounting, colorTemp, emergency, step, customLamp, targetAreaId, targetRoomId, targetFixId, context}
+function openWizard(areaId,roomId,fixId,context){
+  _wizardState={
+    tech:'',lampCode:'',lpf:'',fixtureType:'',fixtureTypeAddl:'',lens:'',mounting:'',colorTemp:'',emergency:'',
+    step:0,customLamp:'',
+    targetAreaId:areaId,targetRoomId:roomId,targetFixId:fixId,
+    context:context||'fixture'
+  };
+  $id('wizardModal').classList.add('active');
+  renderWizardStep();
+}
+function closeWizard(){$id('wizardModal').classList.remove('active');}
+
+function wizardBack(){
+  if(_wizardState.step<=0) return;
+  _wizardState.step--;
+  // if step is skipped, keep going back
+  const tech=_wizardState.tech;
+  const skipped=getSkippedSteps(tech);
+  while(_wizardState.step>0 && skipped.has(_wizardState.step)){
+    _wizardState.step--;
+  }
+  // Clear the value for this step
+  const fieldForStep=['','lampCode','lpf','fixtureType','fixtureTypeAddl','lens','mounting','colorTemp','emergency'];
+  if(_wizardState.step>0 && fieldForStep[_wizardState.step]){
+    _wizardState[fieldForStep[_wizardState.step]]='';
+  }
+  renderWizardStep();
+}
+
+function wizardJumpTo(step){
+  if(step>=_wizardState.step) return;
+  // Clear all fields from step onwards
+  const fieldForStep=['','lampCode','lpf','fixtureType','fixtureTypeAddl','lens','mounting','colorTemp','emergency'];
+  for(let i=step;i<=8;i++){
+    if(fieldForStep[i]) _wizardState[fieldForStep[i]]='';
+  }
+  _wizardState.step=step;
+  renderWizardStep();
+}
+
+function renderWizardStep(){
+  const s=_wizardState;
+  const crumbData=[
+    {label:'Tech',value:s.tech?TECH_OPTIONS.find(t=>t.code===s.tech)?.label||s.tech:''},
+    {label:'Lamp',value:s.lampCode},
+    {label:'L/F',value:s.lpf},
+    {label:'Type',value:s.fixtureType},
+    {label:'Type Addl',value:s.fixtureTypeAddl},
+    {label:'Lens',value:s.lens},
+    {label:'Mount',value:s.mounting},
+    {label:'Temp',value:s.colorTemp},
+    {label:'Emerg',value:s.emergency}
+  ];
+
+  // Breadcrumb
+  const bc=crumbData.map((c,i)=>{
+    let cls='wizard-crumb';
+    if(i===s.step) cls+=' active';
+    else if(i<s.step) cls+=' done';
+    const clickable=i<s.step?`onclick="wizardJumpTo(${i})"`:' ';
+    return `<div class="${cls}" ${clickable}>
+      <span class="wizard-crumb-label">${c.label}</span>
+      <span class="wizard-crumb-value">${c.value||'-'}</span>
+    </div>`;
+  }).join('');
+  $id('wizardBreadcrumb').innerHTML=bc;
+
+  // Back button
+  $id('wizardBackBtn').style.display=s.step>0?'':'none';
+
+  // Code preview
+  $id('wizardCodePreview').textContent=buildWizardCode(s);
+
+  // Content
+  let html='';
+  if(s.step===0){
+    html=`<div class="wizard-step-title">Step 1 — Select Lamp Technology</div>
+    <div class="wizard-options">
+      ${TECH_OPTIONS.map(t=>`<button class="wizard-option${s.tech===t.code?' selected':''}" onclick="wizardSelectTech('${t.code}')">${escHtml(t.label)}</button>`).join('')}
+    </div>`;
+  } else if(s.step===1){
+    const codes=LAMP_CODES[s.tech]||[];
+    const hasCustom=LAMP_CODES_CUSTOM[s.tech];
+    html=`<div class="wizard-step-title">Step 2 — Lamp Code</div>
+    <div class="wizard-options">
+      ${codes.map(c=>`<button class="wizard-option${s.lampCode===c?' selected':''}" onclick="wizardSelectLampCode('${c.replace(/'/g,"\\'")}')">${escHtml(c)}</button>`).join('')}
+    </div>
+    ${hasCustom?`<div class="wizard-custom-input"><input class="form-control" placeholder="Custom lamp code..." id="customLampInput" value="${escHtml(s.customLamp||'')}"><button class="btn btn-primary btn-sm" onclick="wizardSelectCustomLamp()">Use Custom</button></div>`:''}`;
+  } else if(s.step===2){
+    const opts=LPF_OPTIONS[s.tech]||[1];
+    html=`<div class="wizard-step-title">Step 3 — Lamps per Fixture</div>
+    <div class="wizard-options">
+      ${opts.map(v=>`<button class="wizard-option${String(s.lpf)===String(v)?' selected':''}" onclick="wizardSelectLPF('${v}')">${v}</button>`).join('')}
+    </div>`;
+  } else if(s.step===3){
+    const types=FIXTURE_TYPES[s.tech]||[];
+    html=`<div class="wizard-step-title">Step 4 — Fixture Type</div>
+    <div class="wizard-options">
+      ${types.map(t=>`<button class="wizard-option${s.fixtureType===t?' selected':''}" onclick="wizardSelectFixtureType('${t.replace(/'/g,"\\'")}')">${escHtml(t)}</button>`).join('')}
+    </div>`;
+  } else if(s.step===4){
+    const addls=FIXTURE_TYPE_ADDL[s.tech]||[];
+    html=`<div class="wizard-step-title">Step 5 — Fixture Type Addl</div>
+    <div class="wizard-options">
+      ${addls.map(t=>`<button class="wizard-option${s.fixtureTypeAddl===t?' selected':''}" onclick="wizardSelectFixtureTypeAddl('${t.replace(/'/g,"\\'")}')">${escHtml(t)}</button>`).join('')}
+    </div>`;
+  } else if(s.step===5){
+    const lenses=LENS_TYPES[s.tech]||[];
+    html=`<div class="wizard-step-title">Step 6 — Lens Type</div>
+    <div class="wizard-options">
+      ${lenses.map(l=>`<button class="wizard-option${s.lens===l?' selected':''}" onclick="wizardSelectLens('${l.replace(/'/g,"\\'")}')">${escHtml(l)}</button>`).join('')}
+    </div>`;
+  } else if(s.step===6){
+    const mounts=MOUNTING_TYPES[s.tech]||[];
+    html=`<div class="wizard-step-title">Step 7 — Mounting</div>
+    <div class="wizard-options">
+      ${mounts.map(m=>`<button class="wizard-option${s.mounting===m?' selected':''}" onclick="wizardSelectMounting('${m.replace(/'/g,"\\'")}')">${escHtml(m)}</button>`).join('')}
+    </div>`;
+  } else if(s.step===7){
+    const temps=getColorTemps(s.tech);
+    html=`<div class="wizard-step-title">Step 8 — Color Temperature</div>
+    <div class="wizard-options">
+      ${(temps||[]).map(t=>`<button class="wizard-option${s.colorTemp===t?' selected':''}" onclick="wizardSelectColorTemp('${t}')">${t}K</button>`).join('')}
+    </div>`;
+  } else if(s.step===8){
+    html=`<div class="wizard-step-title">Step 9 — Emergency</div>
+    <div class="wizard-options">
+      <button class="wizard-option${s.emergency==='Yes'?' selected':''}" onclick="wizardSelectEmergency('Yes')">Yes</button>
+      <button class="wizard-option${s.emergency==='No'?' selected':''}" onclick="wizardSelectEmergency('No')">No</button>
+    </div>`;
+  }
+  $id('wizardContent').innerHTML=html;
+}
+
+function buildWizardCode(s){
+  if(!s.tech) return '-';
+  if(s.tech==='NE') return 'NE-No Existing-0/No Existing-No Existing-No Existing-No Existing-No Existing-No Existing';
+  const techLabel=TECH_OPTIONS.find(t=>t.code===s.tech)?.label||s.tech;
+  const energy=`${s.tech}-${s.lampCode||'?'}-${s.lpf||'?'}`;
+  const lens=LENS_TYPES[s.tech]===null?'*':s.lens||'?';
+  const temp=s.tech==='CF'?'*':(s.tech==='TBD'?'TBD':(s.colorTemp||'?'));
+  const emerg=s.tech==='CF'?'*':(s.tech==='TBD'?'TBD':(s.emergency||'?'));
+  const attrs=`${s.fixtureType||'?'}-${s.fixtureTypeAddl||'?'}-${lens}-${s.mounting||'?'}-${temp}-${emerg}`;
+  return `${energy} / ${attrs}`;
+}
+
+function wizardSelectTech(code){
+  _wizardState.tech=code;
+  // No Existing: auto-complete immediately
+  if(code==='NE'){
+    _wizardState.lampCode='No Existing';
+    _wizardState.lpf='0';
+    _wizardState.fixtureType='No Existing';
+    _wizardState.fixtureTypeAddl='No Existing';
+    _wizardState.lens='No Existing';
+    _wizardState.mounting='No Existing';
+    _wizardState.colorTemp='No Existing';
+    _wizardState.emergency='No Existing';
+    applyWizardResult();
+    return;
+  }
+  _wizardState.step=1;
+  renderWizardStep();
+}
+
+function wizardSelectLampCode(code){
+  _wizardState.lampCode=code;
+  wizardAdvance();
+}
+function wizardSelectCustomLamp(){
+  const v=$id('customLampInput')?.value?.trim();
+  if(!v){alert('Please enter a custom lamp code.');return;}
+  _wizardState.lampCode=v;
+  _wizardState.customLamp=v;
+  wizardAdvance();
+}
+function wizardSelectLPF(val){
+  _wizardState.lpf=val;
+  wizardAdvance();
+}
+function wizardSelectFixtureType(val){
+  _wizardState.fixtureType=val;
+  // UFL auto-selects 2X2 for type addl (already handled by only one option)
+  wizardAdvance();
+}
+function wizardSelectFixtureTypeAddl(val){
+  _wizardState.fixtureTypeAddl=val;
+  wizardAdvance();
+}
+function wizardSelectLens(val){
+  _wizardState.lens=val;
+  wizardAdvance();
+}
+function wizardSelectMounting(val){
+  _wizardState.mounting=val;
+  wizardAdvance();
+}
+function wizardSelectColorTemp(val){
+  _wizardState.colorTemp=val;
+  wizardAdvance();
+}
+function wizardSelectEmergency(val){
+  _wizardState.emergency=val;
+  // Last step — apply
+  applyWizardResult();
+}
+
+function wizardAdvance(){
+  const s=_wizardState;
+  const tech=s.tech;
+  const skipped=getSkippedSteps(tech);
+
+  // Special auto-select for UFL step 3 (type=2X2, step index 3)
+  if(s.step===2 && tech==='UFL'){
+    s.fixtureType='2X2';
+  }
+
+  // TBD auto-fills temp+emerg
+  // CF skips lens(5), temp(7), emerg(8)
+
+  let next=s.step+1;
+  // Skip steps as needed
+  while(next<=8 && skipped.has(next)){
+    // auto-fill skipped step values
+    if(next===5) s.lens='*'; // CF lens
+    if(next===7) { // temp
+      if(tech==='CF') s.colorTemp='*';
+      else if(tech==='TBD') s.colorTemp='TBD';
+    }
+    if(next===8) { // emerg
+      if(tech==='CF') s.emergency='*';
+      else if(tech==='TBD') s.emergency='TBD';
+    }
+    next++;
+  }
+
+  if(next>8){
+    applyWizardResult();
+    return;
+  }
+  s.step=next;
+  renderWizardStep();
+}
+
+function applyWizardResult(){
+  const s=_wizardState;
+  const energy=s.tech==='NE'
+    ?'NE-No Existing-0'
+    :`${s.tech}-${s.lampCode}-${s.lpf}`;
+  const lens=LENS_TYPES[s.tech]===null?'*':s.lens;
+  const temp=s.tech==='CF'?'*':(s.tech==='TBD'?'TBD':s.colorTemp);
+  const emerg=s.tech==='CF'?'*':(s.tech==='TBD'?'TBD':(s.tech==='NE'?'No Existing':s.emergency));
+
+  const attrs=s.tech==='NE'
+    ?'No Existing-No Existing-No Existing-No Existing-No Existing-No Existing'
+    :`${s.fixtureType}-${s.fixtureTypeAddl}-${lens}-${s.mounting}-${temp}-${emerg}`;
+
+  const code=`${energy} / ${attrs}`;
+
+  if(s.context==='massUpdate'){
+    _massUpdateContext.wizardResult={energy,attrs,code,lampCode:s.lampCode,lampTech:s.tech};
+    $id('muFixtureCodeDisplay').textContent=code;
+    closeWizard();
+    return;
+  }
+
+  const fx=getFixture(s.targetAreaId,s.targetRoomId,s.targetFixId);
+  if(fx){
+    fx.fixtureCode=code;
+    fx.fixtureEnergy=energy;
+    fx.fixtureAttributes=attrs;
+    fx.lampCode=s.lampCode;
+    fx.lampTech=s.tech;
+    fx.lampsPerFixture=s.lpf;
+  }
+  closeWizard();
+  renderAreas();
+}
+
+// =============================================
+//  MASS UPDATE
+// =============================================
+function openMassUpdate(){
+  _massUpdateContext={wizardResult:null};
+  $id('massUpdateBody').innerHTML=renderMassUpdateBody();
+  $id('massUpdateModal').classList.add('active');
+}
+function closeMassUpdate(){$id('massUpdateModal').classList.remove('active');}
+
+function renderMassUpdateBody(){
+  let treeHtml='';
+  audit.areas.forEach(area=>{
+    treeHtml+=`<div class="mu-area">
+      <div class="mu-check-row">
+        <input type="checkbox" id="muArea_${area.id}" onchange="muToggleArea('${area.id}',this.checked)">
+        <label for="muArea_${area.id}"><strong>${escHtml(area.name)}</strong></label>
+      </div>`;
+    area.rooms.forEach(room=>{
+      treeHtml+=`<div class="mu-room">
+        <div class="mu-check-row">
+          <input type="checkbox" id="muRoom_${room.id}" onchange="muToggleRoom('${area.id}','${room.id}',this.checked)">
+          <label for="muRoom_${room.id}">${escHtml(room.name)}</label>
+        </div>`;
+      room.fixtures.forEach(fx=>{
+        treeHtml+=`<div class="mu-fixture">
+          <div class="mu-check-row">
+            <input type="checkbox" id="muFix_${fx.id}" data-area="${area.id}" data-room="${room.id}" data-fix="${fx.id}">
+            <label for="muFix_${fx.id}">#${fx.id} ${escHtml(fx.fixtureCode||'(no fixture)')}</label>
+          </div>
+        </div>`;
+      });
+      treeHtml+=`</div>`;
+    });
+    treeHtml+=`</div>`;
+  });
+
+  const actionOpts=['Retrofit','Replace','Install','Add Controls','Remove','Relamp','Delamp','Do Nothing','Exclude','Warranty Replacement'];
+  const burnOpts=['Warehouse','Office','24 Hours','Emergency'];
+
+  return `
+  <div style="margin-bottom:12px;display:flex;gap:8px">
+    <button class="btn btn-outline btn-sm" onclick="muSelectAll(true)">Select All</button>
+    <button class="btn btn-outline btn-sm" onclick="muSelectAll(false)">Deselect All</button>
+  </div>
+  <div class="mass-update-tree">${treeHtml}</div>
+  <div class="divider"></div>
+  <div style="font-weight:700;margin-bottom:12px;color:#1a4731">Fields to Update</div>
+  <div class="form-grid grid-2">
+    <div class="form-group">
+      <label><input type="checkbox" id="muChkBurn"> Burn Hour Group</label>
+      <select class="form-control" id="muBurnVal">
+        <option value="">Select...</option>
+        ${burnOpts.map(b=>`<option>${b}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" id="muChkAction"> Proposed Action</label>
+      <select class="form-control" id="muActionVal">
+        <option value="">Select...</option>
+        ${actionOpts.map(a=>`<option>${a}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group full-width">
+      <label><input type="checkbox" id="muChkFixture"> Fixture (launches wizard)</label>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+        <div id="muFixtureCodeDisplay" style="flex:1;padding:8px 12px;background:#e8f5e9;border-radius:8px;font-family:monospace;font-size:.85rem;min-height:36px;display:flex;align-items:center">— not selected —</div>
+        <button class="btn btn-primary btn-sm" onclick="openMassUpdateWizard()">Select Fixture</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function muToggleArea(areaId,checked){
+  const area=audit.areas.find(a=>a.id===areaId);
+  if(!area) return;
+  area.rooms.forEach(room=>{
+    const el=$id('muRoom_'+room.id);
+    if(el) el.checked=checked;
+    room.fixtures.forEach(fx=>{
+      const el2=$id('muFix_'+fx.id);
+      if(el2) el2.checked=checked;
+    });
+  });
+}
+function muToggleRoom(areaId,roomId,checked){
+  const area=audit.areas.find(a=>a.id===areaId);
+  if(!area) return;
+  const room=area.rooms.find(r=>r.id===roomId);
+  if(!room) return;
+  room.fixtures.forEach(fx=>{
+    const el=$id('muFix_'+fx.id);
+    if(el) el.checked=checked;
+  });
+}
+function muSelectAll(checked){
+  document.querySelectorAll('[id^="muFix_"]').forEach(el=>el.checked=checked);
+  document.querySelectorAll('[id^="muRoom_"]').forEach(el=>el.checked=checked);
+  document.querySelectorAll('[id^="muArea_"]').forEach(el=>el.checked=checked);
+}
+function openMassUpdateWizard(){
+  openWizard(null,null,null,'massUpdate');
+}
+function applyMassUpdate(){
+  const chkBurn=$id('muChkBurn')?.checked;
+  const burnVal=$id('muBurnVal')?.value;
+  const chkAction=$id('muChkAction')?.checked;
+  const actionVal=$id('muActionVal')?.value;
+  const chkFixture=$id('muChkFixture')?.checked;
+  const fixtureResult=_massUpdateContext.wizardResult;
+
+  const selected=[];
+  document.querySelectorAll('[id^="muFix_"]').forEach(el=>{
+    if(el.checked){
+      selected.push({areaId:el.dataset.area,roomId:el.dataset.room,fixId:parseInt(el.dataset.fix)});
+    }
+  });
+
+  if(!selected.length){alert('No fixtures selected.');return;}
+
+  selected.forEach(({areaId,roomId,fixId})=>{
+    const fx=getFixture(areaId,roomId,fixId);
+    if(!fx) return;
+    if(chkBurn&&burnVal) fx.burnHourGroup=burnVal;
+    if(chkAction&&actionVal) fx.proposedAction=actionVal;
+    if(chkFixture&&fixtureResult){
+      fx.fixtureCode=fixtureResult.code;
+      fx.fixtureEnergy=fixtureResult.energy;
+      fx.fixtureAttributes=fixtureResult.attrs;
+      fx.lampCode=fixtureResult.lampCode;
+      fx.lampTech=fixtureResult.lampTech;
+    }
+  });
+
+  closeMassUpdate();
+  renderAreas();
+  alert(`Mass update applied to ${selected.length} fixture(s).`);
+}
+
+// =============================================
+//  EXCEL EXPORT
+// =============================================
+function exportExcel(){
+  if(!audit.location.name){alert('Please enter a Location Name before exporting.');return;}
+  if(typeof XLSX==='undefined'){alert('SheetJS library not loaded. Please check your internet connection and reload the page.');return;}
+
+  const locName=audit.location.name;
+  const dateStr=new Date().toISOString().slice(0,10);
+  const filename=`${locName.replace(/[^a-z0-9]/gi,'_')}_Audit_${dateStr}.xlsx`;
+
+  const wb=XLSX.utils.book_new();
+
+  // Sheet 1: Location Summary
+  const locHeaders=['Location','Address1','Address2','City','State','Country','PostalCode','FacilityType','UtilityCompany','LocKWHCost','LocKWHDemandCost','BuildingSqFt','AvgMonthlyLightingPayment','AvgMonthlyLightingKWH','FacilityNotes'];
+  const loc=audit.location;
+  const locRow=[loc.name,loc.address1,loc.address2,loc.city,loc.state,loc.country,loc.zip,loc.facilityType,loc.utilityCompany,loc.kwhCost,loc.kwhDemandCost,loc.buildingSqFt,loc.avgMonthlyPayment,loc.avgMonthlyKwh,loc.facilityNotes];
+  const ws1=XLSX.utils.aoa_to_sheet([locHeaders,locRow]);
+  XLSX.utils.book_append_sheet(wb,ws1,'Location Summary');
+
+  // Sheet 2: Lighting
+  const lightHeaders=['Location','AreaName','RoomName','RoomType','Sqft','RoomWidth','RoomLength','RoomNotes','ID#','Fixture','FixtureAttributes','ProposedAction','Qty','DifficultyFactor','SpecialEquipment','InteriorExterior','FixtureHeight','FixtureWatts','BurnHours','BurnHourGroup','Voltage','NumLampsPerFixture','CeilingTile','FC1','FC2','FC3','FC4','FC5','AverageFtCandle','ExistingSensor','NewSensor','NewSensorQty','ControlNotes','Switching','SwitchingQty','Notes'];
+  const burnHoursMap={'Warehouse':7488,'Office':2600,'24 Hours':8736,'Emergency':250};
+  const diffMap={'Base':'0%','Add 25%':'25%','Add 50%':'50%'};
+  const lightRows=[lightHeaders];
+
+  audit.areas.forEach(area=>{
+    area.rooms.forEach(room=>{
+      const avgFc=calcAvgFc(room);
+      room.fixtures.forEach(fx=>{
+        const watts=extractWatts(fx.lampCode)*parseFloat(fx.lampsPerFixture||1);
+        const burnHours=burnHoursMap[fx.burnHourGroup]||'';
+        const diff=diffMap[fx.difficultyFactor]||fx.difficultyFactor||'';
+        lightRows.push([
+          loc.name,
+          area.name,
+          room.name,
+          room.roomType,
+          room.sqft||'',
+          room.width||'',
+          room.length||'',
+          room.roomNotes||'',
+          fx.id,
+          fx.fixtureEnergy||fx.fixtureCode||'',
+          fx.fixtureAttributes||'',
+          fx.proposedAction||'',
+          fx.qty||1,
+          diff,
+          fx.specialEquipment||'',
+          room.interiorExterior||'',
+          fx.fixtureHeight||'',
+          watts||0,
+          burnHours,
+          fx.burnHourGroup||'',
+          room.voltage||'',
+          fx.lampsPerFixture||'',
+          room.ceilingType||'',
+          room.fc1||'',
+          room.fc2||'',
+          room.fc3||'',
+          room.fc4||'',
+          room.fc5||'',
+          avgFc||'',
+          room.existingSensor||'',
+          room.newSensor||'',
+          room.newSensorQty||'',
+          room.controlNotes||'',
+          room.switching||'',
+          room.switchQty||'',
+          fx.notes||''
+        ]);
+      });
+    });
+  });
+
+  const ws2=XLSX.utils.aoa_to_sheet(lightRows);
+  XLSX.utils.book_append_sheet(wb,ws2,'Lighting');
+
+  // Sheet 3: Media Reference
+  const mediaHeaders=['Location','Area Name','Room Name','ID#','Attachment Name'];
+  const ws3=XLSX.utils.aoa_to_sheet([mediaHeaders]);
+  XLSX.utils.book_append_sheet(wb,ws3,'Media Reference');
+
+  XLSX.writeFile(wb,filename);
+}
+
+// =============================================
+//  INIT
+// =============================================
+renderAreas();
+// Pre-select country
+$id('loc_country').value='USA';
+</script>
+</body>
+</html>
